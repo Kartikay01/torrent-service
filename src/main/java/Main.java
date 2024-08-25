@@ -1,5 +1,9 @@
 import com.google.gson.Gson;
-import com.dampcake.bencode.Bencode; 
+
+import java.nio.charset.StandardCharsets;
+
+import com.dampcake.bencode.Bencode;
+import com.dampcake.bencode.Type; 
 
 public class Main {
   private static final Gson gson = new Gson();
@@ -27,7 +31,10 @@ public class Main {
   }
 
   static Object decodeBencode(String bencodedString) {
-    if (Character.isDigit(bencodedString.charAt(0))) {
+    Bencode bencode = new Bencode();
+    char firstChar = bencodedString.charAt(0);
+    Object decoded;
+    if (Character.isDigit(firstChar)) {
       int firstColonIndex = 0;
       for(int i = 0; i < bencodedString.length(); i++) { 
         if(bencodedString.charAt(i) == ':') {
@@ -36,13 +43,20 @@ public class Main {
         }
       }
       int length = Integer.parseInt(bencodedString.substring(0, firstColonIndex));
-      return bencodedString.substring(firstColonIndex+1, firstColonIndex+1+length);
-    } else if (bencodedString.startsWith("i")) {
-      return Long.parseLong(
-          bencodedString.substring(1, bencodedString.indexOf("e")));
+           decoded = bencodedString.substring(firstColonIndex + 1,
+                                         firstColonIndex + 1 + length);
+    } else if (firstChar == 'i') {
+      // bencoded number
+      decoded = bencode.decode(bencodedString.getBytes(StandardCharsets.UTF_8),
+                               Type.NUMBER);
+    } else if (firstChar == 'l') {
+      // bencoded list
+      decoded = bencode.decode(bencodedString.getBytes(StandardCharsets.UTF_8),
+                               Type.LIST);
     } else {
       throw new RuntimeException("Only strings are supported at the moment");
     }
+    return gson.toJson(decoded);
   }
   
 }
